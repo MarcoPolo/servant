@@ -14,7 +14,7 @@
               {:builds
                [{:id "advanced"
                  :source-paths ["src/cljs/servant"]
-                 :compiler {:optimizations :advanced
+                 :compiler {:optimizations :simple
                             :pretty-print false
                             :output-to "main.js"
                             :source-map "main.js.map"

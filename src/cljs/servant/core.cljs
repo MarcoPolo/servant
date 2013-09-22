@@ -1,147 +1,114 @@
 (ns servant.core
   (:require 
-            ;[cljs.core.async :refer [chan close! timeout]]
-            ;[clojure.browser.repl :as repl]
-            ;[servant.test-ns :as test-ns]
-    )
-  ;(:require-macros [cljs.core.async.macros :as m :refer [go]])
+            [cljs.core.async :refer [chan close! timeout put!]]
+            [servant.test-ns :as test-ns]
+            [servant.worker :as worker])
+  (:require-macros [cljs.core.async.macros :as m :refer [go]]
+                   [servant.macros :as sm :refer [defservantfn]])
   )
 
+;; Let's talk about what I want to happen:
 
-;(defn ^:export lolz [a b] `(servant.test-ns/sweet-fn-bro ~a ~b))
-(def ^:export t (clj->js {:command "function"}))
+;; I want to be able to do something like
+(comment 
+  (def answer-to-life 42)
+  (def channel (chan))
+  (defn some-random-fn [a b] (+ a b))
 
-(.log js/console t)
+  (def in-channel 
+    (servant/serve some-random-fn) ;; returns a channel that will pass data to the web worker and run some-random-fn on it
+    )
 
-#_(defn window-load []
-  (def worker-demo (js/Worker. "/worker.js"))
+  (go 
+    (>! in-channel [answer-to-life 5]))
+
+  ;; then read from the channel
+  (go 
+    (.log js/console (str "Servant said: " (<! channel))))
+)
+
+(defn defservant [f]
+  (swap! worker.core/worker-fn-map assoc (str f) f))
+
+(defservant test-ns/some-random-fn)
+
+(defn serve-worker [worker f]
+  (let [in-channel  (chan)
+        out-channel (chan)]
+
+    (go 
+      (loop []
+        (.log js/console "Reading in-channel")
+        (.log js/console "posting message" (<! in-channel))
+        (recur)))
+
+    (.addEventListener
+      worker
+      #(go 
+         (>! out-channel (.-data %1))))
+
+    [in-channel out-channel]))
+
+
+(defn window-load []
+  (def worker-demo (js/Worker. "/main.js"))
+ 
   (.addEventListener 
     worker-demo
     "message" #(.log js/console (str "worker said " (.stringify js/JSON (.-data %1)))) false)
 
-  ;(.postMessage worker-demo (clj->js {:command "function" :function-str (.toString lolz) :args [8 7]}))
-  ;(repl/connect "http://localhost:43922/943/repl")
-  ;(repl/connect (get-repl-endpoint))
-  ;
-  (+ 1 2)
-  (def k (cljs.core.async/chan 3))
+  (def channels (serve-worker worker-demo test-ns/some-random-fn))
+  (def in-c (first channels))
 
-  #_(comment 
+  (put! in-c [5 6])
+
+  (go 
+    (.log js/console 
+      "The value from the worker is"
+      (<! (second channels)))) 
+
+  
+
+  (def k (chan))
+
+  (go 
+    (.log js/console "Trying to read channel")
+    (.log js/console (<! k))
+    (.log js/console "Channel read"))
+
+  (put! k 42 #(.log js/console "done"))
+
+
+  ;(defservantfn worker-demo lolz [a b]
+  ;  (+ a b))
+
+  ;(.postMessage worker-demo (clj->js {:command "function" :function-str (.toString lolz) :args [8 7]}))
+  (comment 
+
+    (def k (chan))
+
+
+    (require '[clojure.core.async :refer :all])
     (go 
-      (<! (cljs.core.async/timeout 100))
-      (.log js/console "loading: 42")
-      (>! k 42))
+      (println "Trying to read channel")
+      (println (<! k))
+      (println "Channel read"))
 
     (go 
       (.log js/console "Trying to read channel")
       (.log js/console (<! k))
-      (.log js/console "Channel read")
-      )
-
-    (def j (cljs.core.async/chan 3))
-
-    (go 
-      (.log js/console "Trying to read channel")
-      (.log js/console (<! j))
-      (.log js/console "Channel read")
-      )
-
-    (go 
-      (<! (cljs.core.async/timeout 100))
-      (.log js/console "loading: 42")
-      (>! j 42))
-    )
-
-)
-
-
-;(set! (.-onload js/window) window-load)
-
-
-
-#_(comment 
-
-  (require '[clojure.core.async :refer :all])
-
-    (+ 1 2)
-    (undefined? (.-worker js/self))
-
-  (def j (chan))
+      (.log js/console "Channel read"))
 
     (go 
       (println "loading: 42")
-      (>! j 42))
-
-    (go 
-      (println  "Trying to read channel")
-      (println (<! j))
-      (println "Channel read")
-      )
-
-    (go 
-      (println  "Trying to read channel")
-      (println (<! (timeout 100)))
-      (println "Channel read")
-      )
+      (put! k 42))
+  
+    (+ 1 2)
+    )
+)
 
 
-  (defservant
-    channel
-    (lolz 1 2))
+(if (undefined? (.-document js/self))
+  (worker/bootstrap)
+  (set! (.-onload js/window) window-load))
 
-
-  (in-ns 'servant.server)
-
-  (run)
-
-  (def repl-env (reset! cemerick.austin.repls/browser-repl-env
-                        (cemerick.austin/repl-env)))
-
-  (cemerick.austin.repls/cljs-repl repl-env)
-
-  (cemerick.austin.repls/browser-connected-repl-js)
-
-  (js/alert "HI")
-
-  (defn testy [] (js/alert "hey this is a test"))
-
-  (str "(" (.toString testy) ")()" )
-
-  (def k (js/Blob. (str "(" (.toString testy) ")()" ) ))
-
-  (def k (js/Blob. (clj->js [(str "(" (.toString testy) ")()" )]) (clj->js {:type "text/script"})))
-
-  (def script (.createObjectURL js/URL k))
-
-
-  (def script-tag (.createElement js/document "script"))
-  (set! (.-src script-tag) script)
-  *ns*
-  (in-ns 'servant.core)
-    *ns*
-
-  k
-
-
-  (.appendChild (.-body js/document) script-tag)
-
-  (+ 1 2)
-
-    servant.core
-
-    (in-ns 'servant.core)
-    (lolz 1 2)
-
-
-    (.log js/console "woot")
-
-    (.-userAgent js/navigator)
-
-    (def t 42)
-    (defn asdf [] t)
-
-    `(~asdf)
-    `(~lolz)
-    `(~window-load)
-
-  )
