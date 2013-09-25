@@ -8,7 +8,7 @@
 (def worker-fn-map (atom {}))
 
 (defn register-servant-fn [f]
-  (swap! worker-fn-map assoc (hash f) f))
+  (swap! worker-fn-map assoc (str f) f))
 
 (defn inject-function 
   "Returns the name of the injected function"
@@ -29,7 +29,7 @@
 (defn run-function-name [message-data]
   (let [function-name (aget message-data "fn")
         f (get @worker-fn-map function-name)
-        args (.-args message-data)]
+        args (aget message-data "args")]
     ;; The function has been loaded, lets call the function
     (apply f args)))
 
@@ -40,7 +40,7 @@
   (.postMessage js/self arraybuffers arraybuffers))
 
 (defn decode-message [event]
-  (condp = (.-command (.-data event))
+  (condp = (aget (.-data event) "command")
     "channel" (.postMessage js/self (run-function-name (.-data event)))
     "channel-arraybuffer" (post-array-buffer (run-function-name (.-data event)))))  
 
