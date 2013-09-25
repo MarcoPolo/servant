@@ -10,3 +10,9 @@ pom.xml.asc
 .lein-failures
 .lein-plugins
 .lein-repl-history
+.repl
+resources
+repl
+out
+main.js
+main.js.map
