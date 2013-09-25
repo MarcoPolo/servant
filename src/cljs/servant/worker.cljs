@@ -1,4 +1,4 @@
-(ns worker.core
+(ns servant.worker
   (:require 
             [servant.test-ns :as test-ns]
             [cljs.core.async :refer [chan close! timeout ]])
@@ -7,7 +7,8 @@
  
 (def worker-fn-map (atom {}))
 
-;; We will keep the worker alive, and when we get a message to do work
+(defn register-servant-fn [f]
+  (swap! worker-fn-map assoc (hash f) f))
 
 (defn inject-function 
   "Returns the name of the injected function"
@@ -26,23 +27,24 @@
     (apply (aget js/self function-name) args)))
 
 (defn run-function-name [message-data]
-  (let [function-name (inject-function (aget message-data "fn"))
+  (let [function-name (aget message-data "fn")
         f (get @worker-fn-map function-name)
         args (.-args message-data)]
     ;; The function has been loaded, lets call the function
     (apply f args)))
 
+(defn post-array-buffer 
+  "In order to send back an array buffer, your function should return 
+  an array of array buffers"
+  [arraybuffers]
+  (.postMessage js/self arraybuffers arraybuffers))
+
 (defn decode-message [event]
-  (->>
-    (condp = (.-command (.-data event))
-      "function" (run-function (.-data event))
-      "channel" (run-function-name (.-data event))
-      "echo" (.-data event)
-      (.-data event))
-    (.postMessage js/self)
-    ))  
+  (condp = (.-command (.-data event))
+    "channel" (.postMessage js/self (run-function-name (.-data event)))
+    "channel-arraybuffer" (post-array-buffer (run-function-name (.-data event)))))  
 
 
 (defn bootstrap []
-  (.postMessage js/self (str "Hello there! " "I'm ready for action :D"))
+  ;(.postMessage js/self (str "Hello there! " "I'm ready for action :D"))
   (set! (.-onmessage js/self) decode-message))

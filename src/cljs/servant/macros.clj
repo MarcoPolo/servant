@@ -6,9 +6,9 @@
 
 (str 'test-ns/some-random-fn)
 
-(defmacro defservantfn [worker name args & body]
-  `(let [func# (fn ~args ~@body)   
-         func-str# (.toString func#)]
-    (defn ~name [& arg-list#] 
-      (.postMessage ~worker (clj->js {"command" "function" "function-str" func-str# "args" arg-list#})))))
+(defmacro defservantfn [name args & body]
+  `(do
+     (defn ~name ~args ~@body)
+     (servant.worker/register-servant-fn ~name)))
 
+(macroexpand-1 '(defservantfn get-first-bits [ab] (test-ns/get-first-32-bits ab)))

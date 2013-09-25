@@ -4,111 +4,71 @@
             [servant.test-ns :as test-ns]
             [servant.worker :as worker])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
-                   [servant.macros :as sm :refer [defservantfn]])
+                   [servant.macros :refer [defservantfn]])
+                  
   )
+
+(defn webworker? []
+  (undefined? (.-document js/self)))
+
+(def not-webworker?  (complement webworker?))
 
 ;; Let's talk about what I want to happen:
 
 ;; I want to be able to do something like
-(comment 
-  (def answer-to-life 42)
-  (def channel (chan))
-  (defn some-random-fn [a b] (+ a b))
 
-  (def in-channel 
-    (servant/serve some-random-fn) ;; returns a channel that will pass data to the web worker and run some-random-fn on it
-    )
+(defn spawn-servants 
+  "Returns a channel that lists available workers"
+  [worker-count worker-script]
+  (let [servant-channel (chan worker-count)]
+    (go 
+      (doseq [x (range worker-count)]
+        (>! servant-channel (js/Worker. worker-script))))
+    servant-channel))
 
+(defn kill-servants
+  "Kills worker-count # of workers"
+  [servant-channel worker-count]
   (go 
-    (>! in-channel [answer-to-life 5]))
+    (doseq [x (range worker-count)]
+      (.terminate (<! servant-channel)))))
 
-  ;; then read from the channel
-  (go 
-    (.log js/console (str "Servant said: " (<! channel))))
-)
+(defn standard-message [worker f args]
+  (.postMessage worker (js-obj "command" "channel" "fn" (hash f) "args" (clj->js args))))
 
-(defn defservant [f]
-  (swap! worker.core/worker-fn-map assoc (str f) f))
+(defn array-buffer-message 
+  "Post message by transferring context of the arraybuffers.
+  The channel should be fed data like [[normal args] [arraybuffer1 arraybuffer2]].
+  Tells the worker to expect to return an arraybuffer"
+  [worker f args]
+  (let [[args arraybuffers] args]
+    (.postMessage worker (js-obj "command" "channel-arraybuffer" "fn" (hash f) "args" (clj->js args)) (clj->js arraybuffers))))
 
-(defservant test-ns/some-random-fn)
+(defn array-buffer-message-standard-reply 
+  "Post message by transferring context of the arraybuffers.
+  The channel should be fed data like [[arg1 arg2] [arraybuffer1 arraybuffer2]].
+  Tells the worker to return normal data"
+  [worker f args]
+  (let [[args arraybuffers] args]
+    (.postMessage worker (js-obj "command" "channel" "fn" (hash f) "args" (clj->js args)) (clj->js arraybuffers))))
 
-(defn serve-worker [worker f]
+(defn wire-servant [servant-channel post-message-fn f]
   (let [in-channel  (chan)
         out-channel (chan)]
 
-    (go 
-      (loop []
-        (.log js/console "Reading in-channel")
-        (.log js/console "posting message" (<! in-channel))
-        (recur)))
+    (go (loop []
+          (when-let [val (<! in-channel) ]
+            (let [worker (<! servant-channel)]
+              (post-message-fn worker f val)
+              ;; Add an event listener for the worker
+              (.addEventListener worker "message"
+                #(go 
+                   (>! out-channel (.-data %1))
+                   ;; return the worker back to the servant-channel
+                   (>! servant-channel worker)))
 
-    (.addEventListener
-      worker
-      #(go 
-         (>! out-channel (.-data %1))))
+              (recur)))))
 
     [in-channel out-channel]))
 
-
-(defn window-load []
-  (def worker-demo (js/Worker. "/main.js"))
- 
-  (.addEventListener 
-    worker-demo
-    "message" #(.log js/console (str "worker said " (.stringify js/JSON (.-data %1)))) false)
-
-  (def channels (serve-worker worker-demo test-ns/some-random-fn))
-  (def in-c (first channels))
-
-  (put! in-c [5 6])
-
-  (go 
-    (.log js/console 
-      "The value from the worker is"
-      (<! (second channels)))) 
-
-  
-
-  (def k (chan))
-
-  (go 
-    (.log js/console "Trying to read channel")
-    (.log js/console (<! k))
-    (.log js/console "Channel read"))
-
-  (put! k 42 #(.log js/console "done"))
-
-
-  ;(defservantfn worker-demo lolz [a b]
-  ;  (+ a b))
-
-  ;(.postMessage worker-demo (clj->js {:command "function" :function-str (.toString lolz) :args [8 7]}))
-  (comment 
-
-    (def k (chan))
-
-
-    (require '[clojure.core.async :refer :all])
-    (go 
-      (println "Trying to read channel")
-      (println (<! k))
-      (println "Channel read"))
-
-    (go 
-      (.log js/console "Trying to read channel")
-      (.log js/console (<! k))
-      (.log js/console "Channel read"))
-
-    (go 
-      (println "loading: 42")
-      (put! k 42))
-  
-    (+ 1 2)
-    )
-)
-
-
-(if (undefined? (.-document js/self))
-  (worker/bootstrap)
-  (set! (.-onload js/window) window-load))
 
