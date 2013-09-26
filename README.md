@@ -42,34 +42,21 @@ Under the hood, `defservantfn` creates a normal function, but it also tells the 
     (make-it-funny your-joke))
 ```
 
-### Wiring a servant 
+### Using a servant 
 To make a call you need to wire up your servant by providing the 
 servant-channel, a message sending fn, and your defined servant fn.
   
 * Servant-channel: Allows the function to figure out to whom it should dispatch the work. 
 * message-fn: Determines how the lowlevel `worker.postMessage` is called. The simplest is defined in servant/standard-message.
-* some-random-fn: This is the defservantfn we created earlier
+* servant-fn: This is the defservantfn we created earlier
+* & args
   
 ```clojure
-  (def channels (servant/wire-servant servant-channel servant/standard-message some-random-fn))
+  (def result-channel (servant/servant-thread servant-channel servant/standard-message servant-fn 5 6))
 ```
 
-After wiring the servant, you will get back a vector of two channels, `[ in-channel out-channel ]`.
-
-Which leads us to our next point.
-
-### Serving you
-
-You have your channels for a specific function, now lets use it.
-
-```clojure
-(go 
-  (>! (first channels) [10 32])
-  (.log js/console "The answer to life, the universe, and everything is:")
-  (<! (second channels) [10 32]))
-```
-
-And that's all there is to it! :)
+This will call the servant-fn using a servant from the pool with the args 5 6.   
+This will return a channel that will contain the result. Similar to how core.async's thread works.
 
 ## Caveats
 Web workers have a completely separate context from the main running script, so to be able to call functions freely, 
@@ -88,12 +75,6 @@ Our current solution is:
   )
 ```
 
-There is no guarantee of the order of the results from out-channel when supplying multiple inputs into the same in-channel.  
-You can circumvent the problem by defining your servant fn to include a tag, and returning the tag along with the result.
-  
-Look at encrypt-demo.cljs for an example.
-
-
 ## Separate Worker file
 
 Sometimes you want to have a separate cljs file for workers, and that's fine!   
@@ -105,11 +86,8 @@ which is significantly easier because they share the context!
 
 Check the src/separate/demo.cljs
 
-
-
-
 ## License
 
-Copyright © 2013 FIXME
+Copyright © 2013 Marco Munizaga
 
 Distributed under the Eclipse Public License, the same as Clojure.

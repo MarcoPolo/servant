@@ -52,23 +52,16 @@
   (let [[args arraybuffers] args]
     (.postMessage worker (js-obj "command" "channel" "fn" (str f) "args" (clj->js args)) (clj->js arraybuffers))))
 
-(defn wire-servant [servant-channel post-message-fn f]
-  (let [in-channel  (chan)
-        out-channel (chan)]
+(defn servant-thread [servant-channel post-message-fn f & args]
+  (let [ out-channel (chan) ]
 
-    (go (loop []
-          (when-let [val (<! in-channel) ]
-            (let [worker (<! servant-channel)]
-              (post-message-fn worker f val)
-              ;; Add an event listener for the worker
-              (.addEventListener worker "message"
-                #(go 
-                   (>! out-channel (.-data %1))
-                   ;; return the worker back to the servant-channel
-                   (>! servant-channel worker)))
-
-              (recur)))))
-
-    [in-channel out-channel]))
-
-
+    (go 
+      (let [worker (<! servant-channel)]
+        (post-message-fn worker f args)
+        ;; Add an event listener for the worker
+        (.addEventListener worker "message"
+           #(go 
+              (>! out-channel (.-data %1))
+              ;; return the worker back to the servant-channel
+              (>! servant-channel worker)))))
+    out-channel))
