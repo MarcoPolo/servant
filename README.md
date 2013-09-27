@@ -86,6 +86,14 @@ which is significantly easier because they share the context!
 
 Check the src/separate/demo.cljs
 
+# Testing
+
+I can't seem to figure out a good way to test web workers :(, I'd love to hear some ideas!
+
+# TODO
+
+Write tests.
+
 ## License
 
 Copyright © 2013 Marco Munizaga
