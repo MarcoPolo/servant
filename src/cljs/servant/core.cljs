@@ -34,7 +34,7 @@
       (.terminate (<! servant-channel)))))
 
 (defn standard-message [worker f args]
-  (.postMessage worker (js-obj "command" "channel" "fn" (str f) "args" (clj->js args))))
+  (.postMessage worker (js-obj "command" "channel" "fn" (hash f) "args" (clj->js args))))
 
 (defn array-buffer-message 
   "Post message by transferring context of the arraybuffers.
@@ -42,7 +42,7 @@
   Tells the worker to expect to return an arraybuffer"
   [worker f args]
   (let [[args arraybuffers] args]
-    (.postMessage worker (js-obj "command" "channel-arraybuffer" "fn" (str f) "args" (clj->js args)) (clj->js arraybuffers))))
+    (.postMessage worker (js-obj "command" "channel-arraybuffer" "fn" (hash f) "args" (clj->js args)) (clj->js arraybuffers))))
 
 (defn array-buffer-message-standard-reply 
   "Post message by transferring context of the arraybuffers.
@@ -50,7 +50,7 @@
   Tells the worker to return normal data"
   [worker f args]
   (let [[args arraybuffers] args]
-    (.postMessage worker (js-obj "command" "channel" "fn" (str f) "args" (clj->js args)) (clj->js arraybuffers))))
+    (.postMessage worker (js-obj "command" "channel" "fn" (hash f) "args" (clj->js args)) (clj->js arraybuffers))))
 
 (defn servant-thread [servant-channel post-message-fn f & args]
   (let [ out-channel (chan) ]

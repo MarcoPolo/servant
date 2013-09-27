@@ -36,8 +36,6 @@
   ;; (this can be a standard copy all args and result, or transfer context of arraybuffer).
   ;; We supply the function we created earlier
   ;; And finally the arguments
-  ;; It returns two channels [in-channel out-channel] for, you guessed it, passing data to 
-  ;; the web worker, and reading it back
   (def channel-1 (servant/servant-thread servant-channel servant/standard-message some-random-fn 5 6))
 
 
