@@ -13,10 +13,6 @@
 
 (def not-webworker?  (complement webworker?))
 
-;; Let's talk about what I want to happen:
-
-;; I want to be able to do something like
-
 (defn spawn-servants 
   "Returns a channel that lists available workers"
   [worker-count worker-script]
@@ -50,10 +46,13 @@
   Tells the worker to return normal data"
   [worker f args]
   (let [[args arraybuffers] args]
-    (.postMessage worker (js-obj "command" "channel" "fn" (hash f) "args" (clj->js args)) (clj->js arraybuffers))))
+    (.postMessage 
+      worker 
+      (js-obj "command" "channel" "fn" (hash f) "args" (clj->js args)) 
+      (clj->js arraybuffers))))
 
 (defn servant-thread [servant-channel post-message-fn f & args]
-  (let [ out-channel (chan) ]
+  (let [ out-channel (chan 1) ]
 
     (go 
       (let [worker (<! servant-channel)]
