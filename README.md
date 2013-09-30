@@ -84,7 +84,9 @@ Do the same thing you did before, but now this will run in a separate (possibly 
 You simply need to figure out what's the best way to pass data around the main browser context, 
 which is significantly easier because they share the context!
 
-Check the src/separate/demo.cljs
+## Examples
+[Simple example project](https://github.com/MarcoPolo/servant-demo)   
+[Encrypt/Decrypt Project using webworkers](https://github.com/MarcoPolo/servant-crypt-demo)
 
 # Testing
 
