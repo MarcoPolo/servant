@@ -20,7 +20,7 @@ Any worker can run any function, so servants do not store any state.
 (def worker-script "/main.js") ;; This is whatever the name of the compiled javascript will be
 
 ;; We need to make sure that only the main script will spawn the servants.
-(if-not (servant/webworker?)
+(when-not (servant/webworker?)
   ;; We keep all the servants in a buffered channel.
   (def servant-channel (servant/spawn-servants worker-count worker-script)))
 ```
