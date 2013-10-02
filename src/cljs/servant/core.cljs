@@ -1,7 +1,6 @@
 (ns servant.core
   (:require 
             [cljs.core.async :refer [chan close! timeout put!]]
-            [servant.test-ns :as test-ns]
             [servant.worker :as worker])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
                    [servant.macros :refer [defservantfn]])
