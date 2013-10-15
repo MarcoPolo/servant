@@ -9,8 +9,6 @@
                  [org.clojure/core.async "0.1.242.0-44b1e3-alpha"]
                  [com.cemerick/clojurescript.test "0.0.4"] ]
   :plugins [[lein-cljsbuild "0.3.3"]]
-  :profiles {:dev {:repl-options {:init-ns servant.server}
-                   :plugins [[com.cemerick/austin "0.1.1"]]}}
   :cljsbuild
               {:builds
                [{:id "servant"
