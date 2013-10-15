@@ -1,4 +1,4 @@
-(defproject servant "0.1.1"
+(defproject servant "0.1.2"
   :source-paths ["src/cljs"]
   :description "A Clojurescript Library for interacting with webworks sanely"
   :url "https://github.com/MarcoPolo/Servant"
