@@ -2,6 +2,12 @@
 
 A Clojurescript library for interacting with webworkers sanely
 
+## Installation 
+  
+add 
+``` [servant "0.1.2"] ```
+to your dependencies
+
 ## Usage
 
 Web workers are a pain to use, manage, and create, but they offer the ability of spawning real threads.
