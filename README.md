@@ -5,7 +5,7 @@ A Clojurescript library for interacting with webworkers sanely
 ## Installation 
   
 add 
-``` [servant "0.1.2"] ```
+``` [servant "0.1.3"] ```
 to your dependencies
 
 ## Usage
