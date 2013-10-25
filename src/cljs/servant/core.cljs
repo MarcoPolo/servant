@@ -51,12 +51,11 @@
       (js-obj "command" "channel" "fn" fn-key  "args" (clj->js args)) 
       (clj->js arraybuffers))))
 
-(defn servant-thread [servant-channel post-message-fn f & args]
+(defn servant-thread-with-key [servant-channel post-message-fn fn-key & args]
   (let [ out-channel (chan 1) ]
-
     (go 
       (let [worker (<! servant-channel)]
-        (post-message-fn worker (f->key f) args)
+        (post-message-fn worker fn-key args)
         ;; Add an event listener for the worker
         (.addEventListener worker "message"
            #(go 
@@ -64,3 +63,6 @@
               ;; return the worker back to the servant-channel
               (>! servant-channel worker)))))
     out-channel))
+
+(defn servant-thread [servant-channel post-message-fn f & args]
+  (apply servant-thread-with-key servant-channel post-message-fn (f->key f) args))
