@@ -3,7 +3,7 @@
 (defmacro defservantfn 
   " Create the function,
     Register the function in a worker-fn map"
-  [name args & body]
+  [fn-sym args & body]
   `(do
-     (defn ~name ~args ~@body)
-     (servant.worker/register-servant-fn ~name)))
+     (defn ~fn-sym ~args ~@body)
+     (servant.worker/register-servant-fn ~(name fn-sym) ~fn-sym)))

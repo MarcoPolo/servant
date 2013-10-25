@@ -3,9 +3,7 @@
             [cljs.core.async :refer [chan close! timeout put!]]
             [servant.worker :as worker])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]
-                   [servant.macros :refer [defservantfn]])
-                  
-  )
+                   [servant.macros :refer [defservantfn]]))
 
 (defn webworker? []
   (undefined? (.-document js/self)))
@@ -28,26 +26,29 @@
     (doseq [x (range worker-count)]
       (.terminate (<! servant-channel)))))
 
-(defn standard-message [worker f args]
-  (.postMessage worker (js-obj "command" "channel" "fn" (hash f) "args" (clj->js args))))
+(defn f->key [f]
+  (ffirst (filter #(= f (second %)) @worker/worker-fn-map)))
+
+(defn standard-message [worker fn-key args]
+  (.postMessage worker (js-obj "command" "channel" "fn" fn-key "args" (clj->js args))))
 
 (defn array-buffer-message 
   "Post message by transferring context of the arraybuffers.
   The channel should be fed data like [[normal args] [arraybuffer1 arraybuffer2]].
   Tells the worker to expect to return an arraybuffer"
-  [worker f args]
+  [worker fn-key args]
   (let [[args arraybuffers] args]
-    (.postMessage worker (js-obj "command" "channel-arraybuffer" "fn" (hash f) "args" (clj->js args)) (clj->js arraybuffers))))
+    (.postMessage worker (js-obj "command" "channel-arraybuffer" "fn" fn-key  "args" (clj->js args)) (clj->js arraybuffers))))
 
 (defn array-buffer-message-standard-reply 
   "Post message by transferring context of the arraybuffers.
   The channel should be fed data like [[arg1 arg2] [arraybuffer1 arraybuffer2]].
   Tells the worker to return normal data"
-  [worker f args]
+  [worker fn-key args]
   (let [[args arraybuffers] args]
     (.postMessage 
       worker 
-      (js-obj "command" "channel" "fn" (hash f) "args" (clj->js args)) 
+      (js-obj "command" "channel" "fn" fn-key  "args" (clj->js args)) 
       (clj->js arraybuffers))))
 
 (defn servant-thread [servant-channel post-message-fn f & args]
@@ -55,7 +56,7 @@
 
     (go 
       (let [worker (<! servant-channel)]
-        (post-message-fn worker f args)
+        (post-message-fn worker (f->key f) args)
         ;; Add an event listener for the worker
         (.addEventListener worker "message"
            #(go 

@@ -1,13 +1,12 @@
 (ns servant.worker
   (:require 
-            [servant.test-ns :as test-ns]
             [cljs.core.async :refer [chan close! timeout ]])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]))
  
 (def worker-fn-map (atom {}))
 
-(defn register-servant-fn [f]
-  (swap! worker-fn-map assoc (hash f) f))
+(defn register-servant-fn [fn-name f]
+  (swap! worker-fn-map assoc (keyword fn-name) f))
 
 (defn run-function-name [message-data]
   (let [function-name (aget message-data "fn")
