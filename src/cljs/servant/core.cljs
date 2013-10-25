@@ -55,7 +55,7 @@
   (let [ out-channel (chan 1) ]
     (go 
       (let [worker (<! servant-channel)]
-        (post-message-fn worker fn-key args)
+        (post-message-fn worker (pr-str fn-key) args)
         ;; Add an event listener for the worker
         (.addEventListener worker "message"
            #(go 

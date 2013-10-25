@@ -1,6 +1,7 @@
 (ns servant.worker
   (:require 
-            [cljs.core.async :refer [chan close! timeout ]])
+    [cljs.core.async :refer [chan close! timeout ]]
+    [cljs.reader :as reader])
   (:require-macros [cljs.core.async.macros :as m :refer [go]]))
  
 (def worker-fn-map (atom {}))
@@ -9,8 +10,8 @@
   (swap! worker-fn-map assoc (keyword fn-name) f))
 
 (defn run-function-name [message-data]
-  (let [function-name (aget message-data "fn")
-        f (get @worker-fn-map function-name)
+  (let [fn-key (reader/read-string (aget message-data "fn"))
+        f (get @worker-fn-map fn-key)
         args (aget message-data "args")]
     (apply f args)))
 
