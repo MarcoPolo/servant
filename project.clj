@@ -1,6 +1,6 @@
 (defproject servant "0.1.3"
   :source-paths ["src/cljs"]
-  :description "A Clojurescript Library for interacting with webworks sanely"
+  :description "A Clojurescript Library for interacting with webworkers sanely"
   :url "https://github.com/MarcoPolo/Servant"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
