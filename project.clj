@@ -1,4 +1,4 @@
-(defproject servant "0.1.3"
+(defproject servant "0.1.4"
   :source-paths ["src/cljs"]
   :description "A Clojurescript Library for interacting with webworkers sanely"
   :url "https://github.com/MarcoPolo/Servant"
@@ -6,7 +6,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-1909"]
-                 [org.clojure/core.async "0.1.242.0-44b1e3-alpha"]
+                 [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
                  [com.cemerick/clojurescript.test "0.0.4"] ]
   :plugins [[lein-cljsbuild "0.3.3"]]
   :cljsbuild
