@@ -3,9 +3,9 @@
 A Clojurescript library for interacting with webworkers sanely
 
 ## Installation 
-  
+
 add 
-``` [servant "0.1.3"] ```
+[![Clojars Project](https://img.shields.io/clojars/v/servant.svg)](https://clojars.org/servant)
 to your dependencies
 
 ## Usage
